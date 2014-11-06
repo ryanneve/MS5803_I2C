@@ -47,7 +47,7 @@ THE SOFTWARE.
 #define MS5803_ADDRESS_AD0_HIGH    0x76 // address pin high (VCC)
 #define MS5803_DEFAULT_ADDRESS     MS5803_ADDRESS_AD0_LOW
 
-#define MS5803_RESET 0x1E 
+#define MS5803_RESET     0x1E 
 #define MS5803_PROM_BASE 0xA0
 #define MS5803_PROM_C1   0xA2
 #define MS5803_PROM_C2   0xA4
@@ -58,10 +58,10 @@ THE SOFTWARE.
 #define MS5803_PROM_CRC  0xAE
 #define MS5803_ADC_READ  0x00
 
+#define MS5803_D1_256   0x40
 #define MS5803_D1_512   0x42
 #define MS5803_D1_1024  0x44
 #define MS5803_D1_2048  0x46
-#define MS5803_D1_256   0x40
 #define MS5803_D1_4096  0x48
 #define MS5803_D2_256   0x50
 #define MS5803_D2_512   0x52
@@ -74,16 +74,29 @@ class MS5803 {
     MS5803();
     MS5803(uint8_t address);
     
-    void initialize(uint8_t model);
-    bool testConnection();
-    int32_t getTemperature();
-    int32_t getTemperature(bool debug);
-    int32_t getPressure();
-    void debugCalConstants();
-    void debugTemperature();
-    void reset();
     float temp_C;
     float press_mBar;
+    float press_kPa;
+    float press_atmospheric;
+    float press_gauge;
+    float press_psi;
+    float depth_fresh;
+    void setAddress(uint8_t address);
+	uint8_t getAddress() {return _dev_address;}
+    void initialize(uint8_t model);
+    bool testConnection();
+    float getTemperature();
+    float getTemperature(bool debug);
+    float getPressure();
+    float getPressure(bool debug);
+    void debugCalConstants();
+    int32_t getCalConstant(uint8_t constant_no);
+    void debugTemperature();
+    void setAtmospheric(float pressure) {press_atmospheric = pressure;}
+    uint16_t reset();
+    long getD1Pressure() { return _d1_pressure; }
+    long getD2Temperature() { return _d2_temperature;}
+    
   private:
     // Calibration Constants
     int32_t _c1_SENSt1; // Pressure Sensitivity
@@ -93,20 +106,20 @@ class MS5803 {
     int32_t _c5_Tref;   // Reference Temperature
     int32_t _c6_TEMPSENS;   // Temperature coefficient of the temperature
     // pressure and temperature data
-    int64_t _d1_pressure;
-    int64_t _d2_temperature;
+    long _d1_pressure;    // AdcPressure - long
+    long _d2_temperature; // AdcTemperature - long
     // Calculated values
-    int32_t _dT;
-    int32_t _TEMP;       // Actual temperature -40 to 85C with .01 resolution (divide by 100)
+    float _dT; //TempDifference
+    float _TEMP;       // Actual temperature -40 to 85C with .01 resolution (divide by 100) - Temperature float
     // Temperature compensated pressure
-    int64_t _OFF;       // Offset at actual temperature
-    int64_t _SENS;      // Sensitivity at actual temperature
-    int32_t _P;         // Temperature compensated pressure 10...1300 mbar (divide by 100)
-    uint8_t buffer[14]; // do we need?
-    uint8_t devAddr;
-    void _getCalConstants();
+    float _OFF;       // First Order Offset at actual temperature // Offset - float
+    float _SENS;      // Sensitivity at actual temperature // Sensitivity - float
+    float _P;         // Temperature compensated pressure 10...1300 mbar (divide by 100 to get mBar)
+    uint8_t buffer[14]; // ByteHigh,ByteMiddle,ByteLow - byte
+    uint8_t _dev_address;
     boolean _debug;
-    uint8_t _model; // the suffix after ms5803.
+    uint8_t _model; // the suffix after ms5803. E.g 2 for MS5803-02 indicates range.
+    void _getCalConstants();
     
 
 };
